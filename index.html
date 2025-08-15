@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Multilingual Name Generator (CN • VI • JP • TH)</title>
+  <style>
+    :root{
+      --bg:#0b0f14; --card:#121821; --text:#e8eef6; --muted:#9fb0c7; --accent:#4aa3ff; --accent-2:#7cffd4;
+      --border:#223042;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:linear-gradient(180deg,#0b0f14,#0d1117 40%,#0b0f14); color:var(--text);}
+    .container{max-width:980px; margin:24px auto; padding:16px;}
+    .app{background:var(--card); border:1px solid var(--border); border-radius:20px; padding:20px; box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    h1{font-size:clamp(22px,3vw,32px); margin:0 0 8px; letter-spacing:.3px}
+    p.sub{margin:0 0 16px; color:var(--muted)}
+    .grid{display:grid; grid-template-columns:1fr; gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:1fr 1fr}}
+    label{font-size:14px; color:var(--muted); margin-bottom:6px; display:block}
+    select, input[type="text"], input[type="number"], input[type="range"]{width:100%; background:#0e141b; color:var(--text); border:1px solid var(--border); border-radius:12px; padding:10px 12px; outline:none}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .controls{display:grid; gap:12px; margin:12px 0 4px}
+    .chip{display:inline-flex; align-items:center; gap:8px; background:#0e141b; border:1px solid var(--border); padding:8px 12px; border-radius:999px; font-size:13px}
+    .inline{display:flex; flex-wrap:wrap; gap:8px}
+    .btns{display:flex; flex-wrap:wrap; gap:10px; margin-top:8px}
+    button{background:linear-gradient(90deg, var(--accent), var(--accent-2)); color:#071018; border:none; padding:10px 16px; border-radius:12px; font-weight:700; cursor:pointer}
+    button.secondary{background:#0e141b; color:var(--text); border:1px solid var(--border); font-weight:600}
+    .results{margin-top:16px; display:grid; gap:10px}
+    .card{background:#0e141b; border:1px solid var(--border); border-radius:14px; padding:12px}
+    .name{font-size:18px; font-weight:800}
+    .roman{font-size:13px; color:var(--muted)}
+    .footer{margin-top:20px; color:var(--muted); font-size:12px}
+    .range-wrap{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px}
+    .hint{font-size:12px; color:var(--muted)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="app">
+      <h1>Multilingual Name Generator</h1>
+      <p class="sub">Chinese • Vietnamese • Japanese • Thai | by Erditya</p>
+
+      <div class="controls">
+        <div class="grid">
+          <div>
+            <label for="lang">Bahasa/Nama</label>
+            <select id="lang">
+              <option value="cn">Chinese (中文)</option>
+              <option value="vi">Vietnamese (Tiếng Việt)</option>
+              <option value="jp">Japanese (日本語)</option>
+              <option value="th">Thai (ไทย)</option>
+            </select>
+          </div>
+          <div>
+            <label for="style">Gaya</label>
+            <select id="style">
+              <option value="any">Apa saja</option>
+              <option value="male">Maskulin</option>
+              <option value="female">Feminim</option>
+              <option value="unisex">Unisex</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div>
+            <label for="count">Jumlah</label>
+            <div class="range-wrap">
+              <input type="range" id="count" min="1" max="20" value="8" />
+              <span id="countVal" class="chip">8</span>
+            </div>
+          </div>
+          <div>
+            <label for="seed">Seed (opsional, untuk hasil konsisten)</label>
+            <input id="seed" type="text" placeholder="contoh: adit-001" />
+          </div>
+        </div>
+
+        <div class="row" id="extra-cn">
+          <div>
+            <label for="cn-len">Panjang nama depan (汉字)</label>
+            <select id="cn-len">
+              <option value="1">1 karakter</option>
+              <option value="2" selected>2 karakter</option>
+            </select>
+          </div>
+          <div>
+            <label>Romanisasi</label>
+            <div class="inline">
+              <label class="chip"><input type="checkbox" id="show-pinyin" checked/> Tampilkan pinyin</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" id="extra-vi" style="display:none">
+          <div>
+            <label for="vi-middle">Tambahkan nama tengah</label>
+            <select id="vi-middle">
+              <option value="auto" selected>Auto</option>
+              <option value="always">Selalu</option>
+              <option value="never">Tidak</option>
+            </select>
+          </div>
+          <div>
+            <label>Format</label>
+            <div class="inline">
+              <label class="chip"><input type="checkbox" id="vi-roman" checked/> Tampilkan tanpa diakritik (ASCII)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" id="extra-jp" style="display:none">
+          <div>
+            <label>Script</label>
+            <select id="jp-script">
+              <option value="kanji" selected>Kanji + Kana</option>
+              <option value="kana">Hiragana/Katakana saja</option>
+              <option value="romaji">Romaji</option>
+            </select>
+          </div>
+          <div>
+            <label class="hint">Catatan: Kanji dipilih dari set umum, tidak selalu merefleksikan makna spesifik.</label>
+          </div>
+        </div>
+
+        <div class="row" id="extra-th" style="display:none">
+          <div>
+            <label for="th-formality">Formalitas</label>
+            <select id="th-formality">
+              <option value="any" selected>Apa saja</option>
+              <option value="formal">Lebih formal</option>
+              <option value="casual">Lebih kasual</option>
+            </select>
+          </div>
+          <div>
+            <label class="hint">Keluaran bisa dalam aksara Thai + transliterasi sederhana.</label>
+          </div>
+        </div>
+
+        <div class="btns">
+          <button id="gen">Generate</button>
+          <button class="secondary" id="copy">Copy hasil</button>
+          <button class="secondary" id="shuffle">Acak seed</button>
+        </div>
+      </div>
+
+      <div class="results" id="results" aria-live="polite"></div>
+
+      <div class="footer">
+        Dibuat untuk hiburan & prototyping UI. Nama yang dihasilkan tidak menjamin akurasi budaya/penulisan—hindari penggunaan untuk identitas resmi.
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ——— Utilities ———
+    function xmur3(str){ let h=1779033703 ^ str.length; for(let i=0;i<str.length;i++){h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = (h<<13) | (h>>>19);} return function(){ h = Math.imul(h ^ (h>>>16), 2246822507); h = Math.imul(h ^ (h>>>13), 3266489909); return (h ^= h>>>16) >>> 0; } }
+    function mulberry32(a){ return function(){ let t=a += 0x6D2B79F5; t = Math.imul(t ^ (t>>>15), t | 1); t ^= t + Math.imul(t ^ (t>>>7), t | 61); return ((t ^ (t>>>14)) >>> 0) / 4294967296; } }
+    function seeded(seedStr){ const seed = xmur3(seedStr)(); return mulberry32(seed); }
+    function rng(){ return Math.random(); }
+    function pick(arr, r){ const i = Math.floor((r??rng()) * arr.length); return arr[i]; }
+    function chance(p, r){ return (r??rng()) < p; }
+
+    function copyToClipboard(text){ navigator.clipboard?.writeText(text).then(()=>{
+      alert('Copied!');
+    }).catch(()=>{
+      const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); alert('Copied!');
+    }); }
+
+    // ——— Data ———
+    const CN = {
+      surnames:[
+        ['李','Li'],['王','Wang'],['张','Zhang'],['刘','Liu'],['陈','Chen'],['杨','Yang'],['赵','Zhao'],['黄','Huang'],['周','Zhou'],['吴','Wu'],
+        ['徐','Xu'],['孙','Sun'],['胡','Hu'],['朱','Zhu'],['高','Gao'],['林','Lin'],['何','He'],['郭','Guo'],['马','Ma'],['罗','Luo']
+      ],
+      givenCharsMale:[['伟','Wei'],['强','Qiang'],['杰','Jie'],['磊','Lei'],['勇','Yong'],['军','Jun'],['波','Bo'],['宇','Yu'],['浩','Hao'],['涛','Tao']],
+      givenCharsFemale:[['美','Mei'],['娜','Na'],['静','Jing'],['芳','Fang'],['婷','Ting'],['敏','Min'],['雪','Xue'],['丽','Li'],['颖','Ying'],['慧','Hui']],
+      givenCharsUnisex:[['晨','Chen'],['宁','Ning'],['欣','Xin'],['然','Ran'],['萌','Meng'],['可','Ke'],['晨','Chen'],['涵','Han'],['晨','Chen'],['希','Xi']]
+    };
+
+    const VI = {
+      surnames:['Nguyễn','Trần','Lê','Phạm','Hoàng','Huỳnh','Phan','Vũ','Võ','Đặng','Bùi','Đỗ','Hồ','Ngô','Dương','Lý'],
+      middles:['Thị','Văn','Hồng','Quốc','Thanh','Ngọc','Minh','Anh','Phúc','Gia','Nhật','Xuân'],
+      givenMale:['Anh','Bảo','Cường','Đạt','Dũng','Hào','Hiếu','Huy','Khang','Khánh','Long','Minh','Nam','Nghĩa','Phong','Quân','Quang','Thắng','Thiện','Trung'],
+      givenFemale:['An','Bích','Chi','Diễm','Duyên','Giang','Hạnh','Hoa','Hương','Khánh','Lan','Linh','Mai','My','Ngân','Ngọc','Như','Quỳnh','Thảo','Trang'],
+      givenUnisex:['An','Vy','Yến','Mi','Thư','Trúc','Vy','Hà','Ly','Tú','Phương']
+    };
+
+    const JP = {
+      surnames:[
+        ['佐藤','Satō'],['鈴木','Suzuki'],['高橋','Takahashi'],['田中','Tanaka'],['伊藤','Itō'],['渡辺','Watanabe'],['山本','Yamamoto'],['中村','Nakamura'],['小林','Kobayashi'],['加藤','Katō']
+      ],
+      givenMale:[ ['大輝','Taiki','たいき'], ['蓮','Ren','れん'], ['葵','Aoi','あおい'], ['陽斗','Haruto','はると'], ['蒼','Ao','あお'], ['悠斗','Yūto','ゆうと'], ['颯太','Sōta','そうた'], ['陸','Riku','りく'] ],
+      givenFemale:[ ['陽菜','Hina','ひな'], ['美咲','Misaki','みさき'], ['結衣','Yui','ゆい'], ['葵','Aoi','あおい'], ['さくら','Sakura','さくら'], ['楓','Kaede','かえで'], ['凛','Rin','りん'], ['花','Hana','はな'] ],
+      givenUnisex:[ ['光','Hikari','ひかり'], ['葵','Aoi','あおい'], ['優','Yū','ゆう'], ['海','Kai','かい'], ['空','Sora','そら'] ]
+    };
+
+    const TH = {
+      surnames:[
+        ['ศิริชัย','Sirichai'],['จันทรา','Chandra'],['สุขสันต์','Suksan'],['วัฒนชัย','Wattanachai'],['กิตติคุณ','Kittikhun'],['รัตนกุล','Rattanakun']
+      ],
+      givenMale:[ ['อนันต์','Anan'], ['นพดล','Noppadol'], ['ธนา','Thana'], ['ภาคิน','Phakhin'], ['กิตติ','Kitti'], ['สงกรานต์','Songkran'] ],
+      givenFemale:[ ['สุชาดา','Suchada'], ['ปิยะดา','Piyada'], ['วราภรณ์','Waraporn'], ['ชลธิชา','Cholticha'], ['กมลชนก','Kamonchanok'] ],
+      givenUnisex:[ ['ภา','Pha'], ['ณิชา','Nicha'], ['พลอย','Ploy'], ['น้ำหวาน','Namwan'], ['ออม','Om'] ]
+    };
+
+    function stripDiacriticsVietnamese(str){
+      const map = {
+        'Á':'A','À':'A','Ả':'A','Ã':'A','Ạ':'A','Ă':'A','Ắ':'A','Ằ':'A','Ẳ':'A','Ẵ':'A','Ặ':'A','Â':'A','Ấ':'A','Ầ':'A','Ẩ':'A','Ẫ':'A','Ậ':'A',
+        'á':'a','à':'a','ả':'a','ã':'a','ạ':'a','ă':'a','ắ':'a','ằ':'a','ẳ':'a','ẵ':'a','ặ':'a','â':'a','ấ':'a','ầ':'a','ẩ':'a','ẫ':'a','ậ':'a',
+        'É':'E','È':'E','Ẻ':'E','Ẽ':'E','Ẹ':'E','Ê':'E','Ế':'E','Ề':'E','Ể':'E','Ễ':'E','Ệ':'E','é':'e','è':'e','ẻ':'e','ẽ':'e','ẹ':'e','ê':'e','ế':'e','ề':'e','ể':'e','ễ':'e','ệ':'e',
+        'Í':'I','Ì':'I','Ỉ':'I','Ĩ':'I','Ị':'I','í':'i','ì':'i','ỉ':'i','ĩ':'i','ị':'i',
+        'Ó':'O','Ò':'O','Ỏ':'O','Õ':'O','Ọ':'O','Ô':'O','Ố':'O','Ồ':'O','Ổ':'O','Ỗ':'O','Ộ':'O','Ơ':'O','Ớ':'O','Ờ':'O','Ở':'O','Ỡ':'O','Ợ':'O',
+        'ó':'o','ò':'o','ỏ':'o','õ':'o','ọ':'o','ô':'o','ố':'o','ồ':'o','ổ':'o','ỗ':'o','ộ':'o','ơ':'o','ớ':'o','ờ':'o','ở':'o','ỡ':'o','ợ':'o',
+        'Ú':'U','Ù':'U','Ủ':'U','Ũ':'U','Ụ':'U','Ư':'U','Ứ':'U','Ừ':'U','Ử':'U','Ữ':'U','Ự':'U',
+        'ú':'u','ù':'u','ủ':'u','ũ':'u','ụ':'u','ư':'u','ứ':'u','ừ':'u','ử':'u','ữ':'u','ự':'u',
+        'Ý':'Y','Ỳ':'Y','Ỷ':'Y','Ỹ':'Y','Ỵ':'Y','ý':'y','ỳ':'y','ỷ':'y','ỹ':'y','ỵ':'y',
+        'Đ':'D','đ':'d'
+      };
+      return str.split('').map(ch => map[ch] || ch).join('');
+    }
+
+    // ——— Generators ———
+    function genCN(pr){
+      const style = document.getElementById('style').value;
+      const len = parseInt(document.getElementById('cn-len').value,10);
+      const showPinyin = document.getElementById('show-pinyin').checked;
+      const [surH, surP] = pick(CN.surnames, pr());
+      let pool = CN.givenCharsUnisex;
+      if(style==='male') pool = pool.concat(CN.givenCharsMale);
+      else if(style==='female') pool = pool.concat(CN.givenCharsFemale);
+      else if(style==='any') pool = pool.concat(CN.givenCharsMale, CN.givenCharsFemale);
+      let chars = [];
+      for(let i=0;i<len;i++){ chars.push(pick(pool, pr())); }
+      const native = surH + chars.map(c=>c[0]).join('');
+      const pinyin = surP + ' ' + chars.map(c=>c[1]).join(' ');
+      return {native, roman: showPinyin ? pinyin : ''};
+    }
+
+    function genVI(pr){
+      const style = document.getElementById('style').value;
+      const middleOpt = document.getElementById('vi-middle').value;
+      const ascii = document.getElementById('vi-roman').checked;
+      const sur = pick(VI.surnames, pr());
+      let givenPool = VI.givenUnisex.slice();
+      if(style==='male') givenPool = givenPool.concat(VI.givenMale);
+      else if(style==='female') givenPool = givenPool.concat(VI.givenFemale);
+      else if(style==='any') givenPool = givenPool.concat(VI.givenMale, VI.givenFemale);
+      const given = pick(givenPool, pr());
+      let middle = '';
+      const insertMiddle = middleOpt==='always' || (middleOpt==='auto' && chance(0.6, pr()));
+      if(insertMiddle){ middle = pick(VI.middles, pr()); }
+      const parts = [sur, middle, given].filter(Boolean);
+      const native = parts.join(' ');
+      const roman = ascii ? stripDiacriticsVietnamese(native) : '';
+      return {native, roman};
+    }
+
+    function genJP(pr){
+      const style = document.getElementById('style').value;
+      const script = document.getElementById('jp-script').value;
+      const [surKanji, surRomaji] = pick(JP.surnames, pr());
+      let pool = JP.givenUnisex.slice();
+      if(style==='male') pool = pool.concat(JP.givenMale);
+      else if(style==='female') pool = pool.concat(JP.givenFemale);
+      else if(style==='any') pool = pool.concat(JP.givenMale, JP.givenFemale);
+      const [gKanjiOrKana, gRomaji, gKana] = pick(pool, pr());
+
+      if(script==='romaji'){
+        return {native: `${surRomaji} ${gRomaji}`, roman: ''};
+      }
+      if(script==='kana'){
+        return {native: `${gKana} ${gKana}`, roman: `${surRomaji} ${gRomaji}`}; // playful: repeat given kana as both? Better: use surname in katakana approx
+      }
+      // Default Kanji + Kana + romaji
+      const native = `${surKanji} ${gKanjiOrKana}`;
+      const roman = `${surRomaji} ${gRomaji} (${gKana})`;
+      return {native, roman};
+    }
+
+    function genTH(pr){
+      const style = document.getElementById('style').value;
+      const formal = document.getElementById('th-formality').value;
+      const [surTh, surLat] = pick(TH.surnames, pr());
+      let pool = TH.givenUnisex.slice();
+      if(style==='male') pool = pool.concat(TH.givenMale);
+      else if(style==='female') pool = pool.concat(TH.givenFemale);
+      else if(style==='any') pool = pool.concat(TH.givenMale, TH.givenFemale);
+      let [gTh, gLat] = pick(pool, pr());
+      if(formal==='casual' && gTh.length>6 && chance(0.7, pr())){ // pick shorter casual nickname
+        const nickPool = [['โบ','Bo'],['กอล์ฟ','Golf'],['บูม','Boom'],['มีน','Mean'],['นัท','Nut'],['มิลค์','Milk'],['นิว','New']];
+        [gTh, gLat] = pick(nickPool, pr());
+      }
+      const native = `${gTh} ${surTh}`;
+      const roman = `${gLat} ${surLat}`;
+      return {native, roman};
+    }
+
+    function genOne(pr){
+      const lang = document.getElementById('lang').value;
+      if(lang==='cn') return genCN(pr);
+      if(lang==='vi') return genVI(pr);
+      if(lang==='jp') return genJP(pr);
+      if(lang==='th') return genTH(pr);
+    }
+
+    function render(list){
+      const wrap = document.getElementById('results');
+      wrap.innerHTML='';
+      list.forEach(item=>{
+        const div=document.createElement('div');
+        div.className='card';
+        div.innerHTML = `<div class="name">${item.native}</div>` + (item.roman?`<div class="roman">${item.roman}</div>`:'');
+        wrap.appendChild(div);
+      });
+    }
+
+    function updateExtras(){
+      const lang = document.getElementById('lang').value;
+      document.getElementById('extra-cn').style.display = (lang==='cn')? 'grid':'none';
+      document.getElementById('extra-vi').style.display = (lang==='vi')? 'grid':'none';
+      document.getElementById('extra-jp').style.display = (lang==='jp')? 'grid':'none';
+      document.getElementById('extra-th').style.display = (lang==='th')? 'grid':'none';
+    }
+
+    // ——— Wire up ———
+    const countEl = document.getElementById('count');
+    const countVal = document.getElementById('countVal');
+    countEl.addEventListener('input',()=>{countVal.textContent=countEl.value});
+    document.getElementById('lang').addEventListener('change', updateExtras);
+
+    document.getElementById('shuffle').addEventListener('click', ()=>{
+      const s = 'seed-' + Math.random().toString(36).slice(2,8);
+      document.getElementById('seed').value = s;
+    });
+
+    document.getElementById('copy').addEventListener('click', ()=>{
+      const names = Array.from(document.querySelectorAll('.card .name')).map(n=>n.textContent);
+      copyToClipboard(names.join('\n'));
+    });
+
+    document.getElementById('gen').addEventListener('click', ()=>{
+      const n = parseInt(countEl.value,10);
+      const seedStr = document.getElementById('seed').value.trim();
+      const pr = seedStr? seeded(seedStr) : rng;
+      const out=[]; for(let i=0;i<n;i++){ out.push(genOne(pr)); }
+      render(out);
+    });
+
+    // initial
+    updateExtras();
+  </script>
+</body>
+</html>
